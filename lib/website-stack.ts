@@ -31,11 +31,36 @@ export class WebsiteStack extends cdk.Stack {
       autoDeleteObjects: true,
     });
 
+    // CloudFront Function to handle subdirectory index.html
+    const urlRewriteFunction = new cloudfront.Function(this, 'UrlRewriteFunction', {
+      code: cloudfront.FunctionCode.fromInline(`
+        function handler(event) {
+          var request = event.request;
+          var uri = request.uri;
+
+          // If URI ends with '/', append index.html
+          if (uri.endsWith('/')) {
+            request.uri += 'index.html';
+          }
+          // If URI doesn't have an extension, append /index.html
+          else if (!uri.includes('.')) {
+            request.uri += '/index.html';
+          }
+
+          return request;
+        }
+      `),
+    });
+
     // CloudFront distribution
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
       defaultBehavior: {
         origin: origins.S3BucketOrigin.withOriginAccessControl(websiteBucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        functionAssociations: [{
+          function: urlRewriteFunction,
+          eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
+        }],
       },
       domainNames: [domainName, `www.${domainName}`],
       certificate,
