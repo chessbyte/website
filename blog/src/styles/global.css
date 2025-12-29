@@ -111,8 +111,10 @@ code {
 	border-radius: 2px;
 }
 pre {
-	padding: 1.5em;
+	padding: 1.5em 2em;
 	border-radius: 8px;
+	margin-left: -2em;
+	margin-right: -2em;
 }
 pre > code {
 	all: unset;
@@ -133,6 +135,12 @@ hr {
 	}
 	main {
 		padding: 1em;
+	}
+	pre {
+		margin-left: -1em;
+		margin-right: -1em;
+		padding-left: 1em;
+		padding-right: 1em;
 	}
 }
 
