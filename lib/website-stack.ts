@@ -5,7 +5,9 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
+import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
+import { blogBundle } from './blog-bundling';
 
 export class WebsiteStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -72,6 +74,16 @@ export class WebsiteStack extends cdk.Stack {
           responsePagePath: '/404.html',
         },
       ],
+    });
+
+    // Build blog/ at synth time and upload it, invalidating CloudFront.
+    // `distribution` without `distributionPaths` invalidates everything, which
+    // is what we want for a site this small.
+    new s3deploy.BucketDeployment(this, 'DeployWebsite', {
+      sources: [blogBundle()],
+      destinationBucket: websiteBucket,
+      distribution,
+      prune: true,
     });
 
     // DNS records
