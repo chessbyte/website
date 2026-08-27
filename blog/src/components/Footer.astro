@@ -1,9 +1,11 @@
 ---
-const today = new Date();
+// Static build: this is the *build* year. The inline script below corrects it
+// at view time so the footer doesn't go stale between deploys.
+const buildYear = new Date().getFullYear();
 ---
 
 <footer>
-	&copy; {today.getFullYear()} chessbyte. All rights reserved.
+	&copy; <span id="copyright-year">{buildYear}</span> chessbyte. All rights reserved.
 	<div class="social-links">
 		<a href="https://github.com/chessbyte" target="_blank">
 			<span class="sr-only">GitHub</span>
@@ -25,6 +27,9 @@ const today = new Date();
 		</a>
 	</div>
 </footer>
+<script is:inline>
+	document.getElementById('copyright-year').textContent = new Date().getFullYear();
+</script>
 <style>
 	footer {
 		padding: 2em 1em 6em 1em;
