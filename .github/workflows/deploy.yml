@@ -1,0 +1,45 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# id-token lets the runner request the OIDC token AWS trusts. Nothing here
+# needs to write to the repo, so contents stays read-only.
+permissions:
+  contents: read
+  id-token: write
+
+# BucketDeployment prunes the bucket to match its source, so two concurrent
+# runs would fight over the same objects. Queue instead of cancelling: a
+# half-finished CloudFormation update is worse than a slow one.
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      # CDK's own dependencies. The Astro build runs later, inside synth:
+      # lib/blog-bundling.ts does `npm ci && npm run build` in blog/.
+      - run: npm ci
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          # Set once, from the GitHubDeployRoleArn stack output.
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: github-actions-deploy
+          aws-region: us-east-1
+
+      # Builds blog/, uploads it, and invalidates CloudFront in one step.
+      # --require-approval never: there is no TTY to answer a prompt. The
+      # review gate is branch protection on main, not this flag.
+      - run: npx cdk deploy --require-approval never

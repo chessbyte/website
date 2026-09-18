@@ -8,6 +8,7 @@ import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
 import { blogBundle } from './blog-bundling';
+import { GitHubDeployRole } from './github-oidc';
 
 export class WebsiteStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -107,7 +108,16 @@ export class WebsiteStack extends cdk.Stack {
       target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)),
     });
 
+    // Lets .github/workflows/deploy.yml run `cdk deploy` with no stored key.
+    // Deployed from a laptop first; CI cannot create the role it needs to
+    // authenticate with.
+    const githubDeploy = new GitHubDeployRole(this, 'GitHubDeploy', {
+      repository: 'chessbyte/website',
+      branch: 'main',
+    });
+
     // Outputs
+    new cdk.CfnOutput(this, 'GitHubDeployRoleArn', { value: githubDeploy.role.roleArn });
     new cdk.CfnOutput(this, 'BucketName', { value: websiteBucket.bucketName });
     new cdk.CfnOutput(this, 'DistributionDomain', { value: distribution.distributionDomainName });
     new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
