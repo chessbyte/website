@@ -9,3 +9,8 @@ cdk.out
 
 # CDK context (contains account/hosted zone IDs from lookups)
 cdk.context.json
+
+# tsconfig.json is excluded by a global gitignore on at least one machine.
+# CDK needs it at synth time, and CI checks out only tracked files, so
+# un-ignore it here: repo .gitignore takes precedence over core.excludesFile.
+!tsconfig.json
