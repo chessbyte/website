@@ -68,6 +68,15 @@ export class WebsiteStack extends cdk.Stack {
       certificate,
       defaultRootObject: 'index.html',
       errorResponses: [
+        // OAC grants CloudFront s3:GetObject but not s3:ListBucket, so S3
+        // answers 403 AccessDenied (not 404 NoSuchKey) for a missing object
+        // rather than reveal whether it exists. Without this entry a bad URL
+        // leaks S3's AccessDenied XML instead of rendering 404.html.
+        {
+          httpStatus: 403,
+          responseHttpStatus: 404,
+          responsePagePath: '/404.html',
+        },
         {
           httpStatus: 404,
           responseHttpStatus: 404,
